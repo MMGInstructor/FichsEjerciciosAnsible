@@ -1,10 +1,78 @@
+<?php
+// Configuración de la conexión a MariaDB (generado por plantilla Jinja2)
+$host    = '{{ db.host | default("localhost") }}';
+$db      = '{{ db.database | default("Usuarios") }}';
+$user    = '{{ db.user | default("root") }}';
+$pass    = '{{ db.password | replace("'", "\\'") }}';
+$charset = 'utf8mb4';
+
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    PDO::ATTR_EMULATE_PREPARES   => false,
+];
+
+try {
+    $pdo = new PDO($dsn, $user, $pass, $options);
+    $stmt = $pdo->query("SELECT id, username, email, activo FROM usuarios ORDER BY id ASC");
+    $usuarios = $stmt->fetchAll();
+} catch (\PDOException $e) {
+    die("Error de conexión con la base de datos: " . htmlspecialchars($e->getMessage()));
+}
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Bienvenido</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listado de Usuarios</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; margin: 2rem; background-color: #f8f9fa; color: #212529; }
+        h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+        table { width: 100%; max-width: 800px; border-collapse: collapse; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #dee2e6; }
+        th { background-color: #343a40; color: #fff; }
+        tr:hover { background-color: #f1f3f5; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; }
+        .activo { background-color: #d4edda; color: #155724; }
+        .inactivo { background-color: #f8d7da; color: #721c24; }
+    </style>
 </head>
 <body>
-    <h1>Bienvenido a {{ ansible_hostname }}</h1>
+
+    <h1>Usuarios registrados en MariaDB</h1>
+
+    <?php if (count($usuarios) > 0): ?>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Usuario</th>
+                    <th>Email</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($usuarios as $u): ?>
+                    <tr>
+                        <td><?= htmlspecialchars($u['id']) ?></td>
+                        <td><?= htmlspecialchars($u['username']) ?></td>
+                        <td><?= htmlspecialchars($u['email']) ?></td>
+                        <td>
+                            <?php if ($u['activo'] == 1): ?>
+                                <span class="badge activo">Activo</span>
+                            <?php else: ?>
+                                <span class="badge inactivo">Inactivo</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php else: ?>
+        <p>No hay usuarios registrados en la tabla.</p>
+    <?php endif; ?>
+
 </body>
 </html>
